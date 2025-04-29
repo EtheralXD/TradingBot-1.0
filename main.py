@@ -5,11 +5,9 @@ import os
 from ta.volatility import DonchianChannel
 from ta.volume import ChaikinMoneyFlowIndicator
 
-# MEXC credentials
 api_key = os.getenv("API_KEY")
 secret = os.getenv("SECRET_KEY")
 
-# Initialize MEXC
 exchange = ccxt.mexc({
     'apiKey': api_key,
     'secret': secret,
