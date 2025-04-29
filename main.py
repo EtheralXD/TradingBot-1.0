@@ -15,7 +15,7 @@ exchange = ccxt.mexc({
 })
 
 symbol = 'MOODENG/USDT'
-timeframe = '15m'
+timeframe = '5m'
 limit = 100
 
 def fetch_ohlcv():
@@ -30,23 +30,28 @@ def apply_indicators(df):
 
     df['donchian_upper'] = dc.donchian_channel_hband()
     df['donchian_lower'] = dc.donchian_channel_lband()
+    df['ema50'] = df['close'].ewm(span=50, adjust=False).mean()
+    df['donchian_middle'] = (df['donchian_upper'] + df['donchian_lower']) / 2
     df['cmf'] = cmf.chaikin_money_flow()
 
     return df
 
 def strategy(df):
     last = df.iloc[-1]
-    previous = df.iloc[-2]
 
-    if last['close'] > last['donchian_upper'] and last['cmf'] > 0:
-        print(f"[{last['timestamp']}] ✅ BUY Signal - Price: {last['close']} coin: {[symbol]}")
-    elif last['close'] < last['donchian_lower'] and last['cmf'] < 0:
-        print(f"[{last['timestamp']}] ❌ SELL Signal - Price: {last['close']} coin: {[symbol]}")
+    if last['close'] > last['donchian_middle'] and last['cmf'] > 0 and last['close'] > last['ema50']:
+        print(f"[{last['timestamp']}] ✅ BUY Bias Signal - Price: {last['close']} coin: {[symbol]}")
+    elif last['close'] < last['donchian_middle'] and last['cmf'] < 0 and last['close'] < last['ema50']:
+        print(f"[{last['timestamp']}] ❌ SELL Bias Signal - Price: {last['close']} coin: {[symbol]}")
     else:
         print(f"[{last['timestamp']}] ⏳ HOLD - Price: {last['close']} coin: {[symbol]}")
+
 
 while True:
     df = fetch_ohlcv()
     df = apply_indicators(df)
     strategy(df)
-    time.sleep(60 * 15) 
+    now = time.time()
+    sleep_time = 300 - (now % 300)
+    time.sleep(sleep_time)
+
